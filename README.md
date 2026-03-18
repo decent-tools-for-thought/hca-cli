@@ -12,15 +12,13 @@ pip install -e . --no-build-isolation
 
 ## Pacman
 
-For tagged releases, GitHub Actions builds an Arch-compatible package and attaches it to the GitHub release.
+Release assets for pacman are built with `tools/build_release_assets.sh` and uploaded to the GitHub release.
 
 Build locally from a clone:
 
 ```bash
-git archive --format=tar.gz --prefix=hca-cli-0.1.0/ HEAD > packaging/arch/hca-cli-0.1.0.tar.gz
-cd packaging/arch
-makepkg -f
-sudo pacman -U ./hca-cli-0.1.0-1-any.pkg.tar.zst
+./tools/build_release_assets.sh 0.1.0
+sudo pacman -U ./dist/hca-cli-0.1.0-1-any.pkg.tar.zst
 ```
 
 Install from a GitHub release asset:
