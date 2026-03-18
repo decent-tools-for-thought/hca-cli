@@ -1,0 +1,23 @@
+# Maintainer: decent-tools-for-thought
+
+pkgname=hca-cli
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Self-documenting command line client for the Human Cell Atlas API"
+arch=('any')
+url="https://github.com/decent-tools-for-thought/hca-cli"
+license=('custom:Proprietary')
+depends=('python')
+makedepends=('python-setuptools')
+source=("$pkgname-$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+  cd "$srcdir/$pkgname-$pkgver"
+  python setup.py build
+}
+
+package() {
+  cd "$srcdir/$pkgname-$pkgver"
+  python setup.py install --root="$pkgdir" --optimize=1 --skip-build
+}

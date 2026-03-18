@@ -10,6 +10,26 @@ It exposes the raw API, adds command help sourced from a bundled OpenAPI snapsho
 pip install -e . --no-build-isolation
 ```
 
+## Pacman
+
+For tagged releases, GitHub Actions builds an Arch-compatible package and attaches it to the GitHub release.
+
+Build locally from a clone:
+
+```bash
+git archive --format=tar.gz --prefix=hca-cli-0.1.0/ HEAD > packaging/arch/hca-cli-0.1.0.tar.gz
+cd packaging/arch
+makepkg -f
+sudo pacman -U ./hca-cli-0.1.0-1-any.pkg.tar.zst
+```
+
+Install from a GitHub release asset:
+
+```bash
+gh release download v0.1.0 --repo decent-tools-for-thought/hca-cli --pattern '*.pkg.tar.zst'
+sudo pacman -U ./hca-cli-0.1.0-1-any.pkg.tar.zst
+```
+
 ## Start Here
 
 ```bash
