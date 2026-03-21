@@ -7,26 +7,19 @@ It exposes the raw API, adds command help sourced from a bundled OpenAPI snapsho
 ## Install
 
 ```bash
-pip install -e . --no-build-isolation
+uv tool install .
 ```
 
-## Pacman
-
-Release assets for pacman are built with `tools/build_release_assets.sh` and uploaded to the GitHub release.
-
-Build locally from a clone:
+For local development:
 
 ```bash
-./tools/build_release_assets.sh 0.1.0
-sudo pacman -U ./dist/hca-cli-0.1.0-1-any.pkg.tar.zst
+uv sync --dev
+uv run hca --help
 ```
 
-Install from a GitHub release asset:
+## Releases
 
-```bash
-gh release download v0.1.0 --repo decent-tools-for-thought/hca-cli --pattern '*.pkg.tar.zst'
-sudo pacman -U ./hca-cli-0.1.0-1-any.pkg.tar.zst
-```
+Tagging `v<version>` publishes Python distribution artifacts built from the tagged commit on GitHub.
 
 ## Start Here
 
@@ -71,7 +64,7 @@ The live HCA API does not expose a first-class dataset entity, so the CLI derive
 ## Updating the OpenAPI Snapshot
 
 ```bash
-python tools/update_openapi_summary.py
+uv run python tools/update_openapi_summary.py
 ```
 
 This refreshes the bundled metadata snapshot used for help text and raw-operation discovery.

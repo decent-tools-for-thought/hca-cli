@@ -2,8 +2,6 @@ __pycache__/
 *.pyc
 .pytest_cache/
 dist/
-*.pkg.tar.zst
-*.pkg.tar.zst.sig
-/packaging/arch/pkg/
-/packaging/arch/src/
-/packaging/arch/hca-cli-*.tar.gz
+build/
+*.egg-info/
+.venv/
