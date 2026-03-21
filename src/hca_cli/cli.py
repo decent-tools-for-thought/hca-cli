@@ -648,13 +648,13 @@ def build_parser() -> argparse.ArgumentParser:
         epilog="Use `hca explain` for the conceptual model and `hca api operations` for the full raw API surface.",
     )
     add_transport_options(parser)
-    subparsers = parser.add_subparsers(dest="command", required=True)
+    subparsers = parser.add_subparsers(dest="command")
 
     explain = subparsers.add_parser("explain", help="Explain the HCA API mental model and common workflows.")
     explain.set_defaults(func=cmd_explain)
 
     api = subparsers.add_parser("api", help="Inspect or call the raw API surface described by the bundled OpenAPI snapshot.")
-    api_sub = api.add_subparsers(dest="api_command", required=True)
+    api_sub = api.add_subparsers(dest="api_command")
 
     operations_parser = api_sub.add_parser("operations", help="List all known API operations.")
     add_render_options(operations_parser, default_output="text")
@@ -678,7 +678,7 @@ def build_parser() -> argparse.ArgumentParser:
     call_parser.set_defaults(func=cmd_api_call)
 
     aux = subparsers.add_parser("aux", help="Auxiliary service endpoints.")
-    aux_sub = aux.add_subparsers(dest="aux_command", required=True)
+    aux_sub = aux.add_subparsers(dest="aux_command")
     for name, handler, help_text in (
         ("root", cmd_aux_root, "Call GET /."),
         ("swagger-ui", cmd_aux_swagger_ui, "Fetch the Swagger UI HTML."),
@@ -696,7 +696,7 @@ def build_parser() -> argparse.ArgumentParser:
     swagger_file.set_defaults(func=cmd_aux_swagger_file)
 
     health = subparsers.add_parser("health", help="Health checks.")
-    health_sub = health.add_subparsers(dest="kind", required=True)
+    health_sub = health.add_subparsers(dest="kind")
     for kind in ("complete", "basic", "cached", "fast"):
         health_parser = health_sub.add_parser(kind, help=f"Run the {kind} health check.")
         add_render_options(health_parser)
@@ -707,7 +707,7 @@ def build_parser() -> argparse.ArgumentParser:
     selective.set_defaults(func=cmd_health)
 
     index = subparsers.add_parser("index", help="Browse the indexed HCA entities.")
-    index_sub = index.add_subparsers(dest="index_command", required=True)
+    index_sub = index.add_subparsers(dest="index_command")
 
     index_catalogs = index_sub.add_parser("catalogs", help="List available catalogs.")
     add_render_options(index_catalogs)
@@ -743,7 +743,7 @@ def build_parser() -> argparse.ArgumentParser:
     index_summary.set_defaults(func=cmd_index_summary)
 
     manifest = subparsers.add_parser("manifest", help="Manifest preparation endpoints.")
-    manifest_sub = manifest.add_subparsers(dest="manifest_command", required=True)
+    manifest_sub = manifest.add_subparsers(dest="manifest_command")
 
     manifest_prepare = manifest_sub.add_parser("prepare", help="Start manifest preparation.")
     add_render_options(manifest_prepare)
@@ -766,7 +766,7 @@ def build_parser() -> argparse.ArgumentParser:
     manifest_status.set_defaults(func=cmd_manifest_status)
 
     repository = subparsers.add_parser("repository", help="Repository-backed file access.")
-    repository_sub = repository.add_subparsers(dest="repository_command", required=True)
+    repository_sub = repository.add_subparsers(dest="repository_command")
 
     file_url = repository_sub.add_parser("file-url", help="Get the redirect or XHR metadata for a file download URL.")
     add_render_options(file_url)
@@ -788,7 +788,7 @@ def build_parser() -> argparse.ArgumentParser:
     repository_sources.set_defaults(func=cmd_repository_sources)
 
     atlas = subparsers.add_parser("atlas", help="Atlas-oriented views built on top of the raw API.")
-    atlas_sub = atlas.add_subparsers(dest="atlas_command", required=True)
+    atlas_sub = atlas.add_subparsers(dest="atlas_command")
     for name, handler, help_text in (
         ("overview", cmd_atlas_overview, "Summarize tissues, cell types, and modalities together."),
         ("tissues", cmd_atlas_tissues, "List top tissues by aggregated cell counts."),
@@ -814,7 +814,7 @@ def build_parser() -> argparse.ArgumentParser:
     atlas_projects.set_defaults(func=cmd_atlas_projects)
 
     dataset = subparsers.add_parser("dataset", help="Derived dataset-centric views built on top of project detail metadata.")
-    dataset_sub = dataset.add_subparsers(dest="dataset_command", required=True)
+    dataset_sub = dataset.add_subparsers(dest="dataset_command")
 
     dataset_query = dataset_sub.add_parser("query", help="Find derived datasets by tissue, cell type, and modality.")
     add_render_options(dataset_query, default_output="text")
@@ -860,6 +860,27 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+    if args.command is None:
+        parser.print_help()
+        return 0
+    command_help_attr = {
+        "api": "api_command",
+        "aux": "aux_command",
+        "health": "kind",
+        "index": "index_command",
+        "manifest": "manifest_command",
+        "repository": "repository_command",
+        "atlas": "atlas_command",
+        "dataset": "dataset_command",
+    }
+    help_attr = command_help_attr.get(args.command)
+    if help_attr and getattr(args, help_attr) is None:
+        next(
+            action
+            for action in parser._actions
+            if isinstance(action, argparse._SubParsersAction)
+        ).choices[args.command].print_help()
+        return 0
     try:
         return args.func(args)
     except CliError as exc:
