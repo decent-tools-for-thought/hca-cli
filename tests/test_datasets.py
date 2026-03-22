@@ -18,7 +18,10 @@ def test_derive_dataset_from_contributed_analyses() -> None:
                                                 "name": "lung.h5ad",
                                                 "format": "h5ad",
                                                 "size": 1024,
-                                                "contentDescription": ["Gene expression matrix", "cell surface protein profiling"],
+                                                "contentDescription": [
+                                                    "Gene expression matrix",
+                                                    "cell surface protein profiling",
+                                                ],
                                                 "uuid": "file-1",
                                                 "version": "v1",
                                                 "drs_uri": "drs://example",
@@ -57,8 +60,18 @@ def test_derive_dataset_from_contributed_analyses() -> None:
 
 def test_filter_datasets_by_modality() -> None:
     datasets = [
-        {"modalities": ["transcriptomics"], "primary_modality": "transcriptomics", "formats": ["h5"], "size_bytes": 10},
-        {"modalities": ["proteomics"], "primary_modality": "proteomics", "formats": ["fcs"], "size_bytes": 20},
+        {
+            "modalities": ["transcriptomics"],
+            "primary_modality": "transcriptomics",
+            "formats": ["h5"],
+            "size_bytes": 10,
+        },
+        {
+            "modalities": ["proteomics"],
+            "primary_modality": "proteomics",
+            "formats": ["fcs"],
+            "size_bytes": 20,
+        },
     ]
     filtered = filter_datasets(datasets, modality="proteomics")
     assert filtered == [datasets[1]]
@@ -71,4 +84,10 @@ def test_dataset_format_rows_aggregate() -> None:
             {"primary_modality": "transcriptomics", "formats": ["h5ad"], "size_bytes": 50},
         ]
     )
-    assert {"modality": "transcriptomics", "format": "h5ad", "datasets": 2, "total_size_bytes": 150, "total_size": "150 B"} in rows
+    assert {
+        "modality": "transcriptomics",
+        "format": "h5ad",
+        "datasets": 2,
+        "total_size_bytes": 150,
+        "total_size": "150 B",
+    } in rows

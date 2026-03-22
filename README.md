@@ -10,11 +10,45 @@ It exposes the raw API, adds command help sourced from a bundled OpenAPI snapsho
 uv tool install .
 ```
 
+To install from PyPI once published:
+
+```bash
+uv tool install hca-cli
+```
+
 For local development:
 
 ```bash
 uv sync --dev
 uv run hca --help
+```
+
+## Auth And Config
+
+By default the CLI talks to `https://service.azul.data.humancellatlas.org`.
+
+- Set `HCA_API_BEARER_TOKEN` to send an `Authorization: Bearer ...` header on every request.
+- Override the target service with `--base-url`.
+- Adjust request timing with `--timeout`.
+- Pass `--follow-redirects` when you want the CLI to follow manifest or repository redirects instead of showing the redirect response metadata.
+
+Examples:
+
+```bash
+export HCA_API_BEARER_TOKEN="..."
+hca --timeout 30 index catalogs
+hca --base-url https://service.azul.data.humancellatlas.org health basic
+```
+
+## Smoke Usage
+
+These commands are the intended quick checks after install:
+
+```bash
+hca --help
+hca explain
+hca index catalogs
+hca api describe GET /index/catalogs
 ```
 
 ## Releases
@@ -68,3 +102,12 @@ uv run python tools/update_openapi_summary.py
 ```
 
 This refreshes the bundled metadata snapshot used for help text and raw-operation discovery.
+
+## Quality Checks
+
+```bash
+uv run ruff format --check .
+uv run ruff check .
+uv run mypy
+uv run pytest -m "unit or packaging_smoke"
+```

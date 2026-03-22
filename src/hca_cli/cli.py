@@ -2,24 +2,34 @@ from __future__ import annotations
 
 import argparse
 import os
-from typing import Any
+import sys
+from typing import Any, Callable, cast
 
-from hca_cli.atlas import atlas_project_filters, summarize_cell_types, summarize_modalities, summarize_tissues
+from hca_cli.atlas import (
+    atlas_project_filters,
+    summarize_cell_types,
+    summarize_modalities,
+    summarize_tissues,
+)
 from hca_cli.client import ApiClient
-from hca_cli.datasets import dataset_detail_text, dataset_format_rows, dataset_text_rows, derive_datasets, filter_datasets
+from hca_cli.datasets import (
+    dataset_detail_text,
+    dataset_format_rows,
+    dataset_text_rows,
+    derive_datasets,
+    filter_datasets,
+)
 from hca_cli.filters import merge_filters, parse_assignment
 from hca_cli.formatting import dump_json, format_bytes, render_table, response_to_display
 from hca_cli.spec import (
     api_info,
     catalogs,
     entity_types,
-    filter_fields,
     get_operation,
     manifest_formats,
     operations,
     sort_fields,
 )
-
 
 DEFAULT_BASE_URL = "https://service.azul.data.humancellatlas.org"
 
@@ -30,13 +40,19 @@ class CliError(RuntimeError):
 
 def add_transport_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--base-url", default=DEFAULT_BASE_URL, help="API base URL.")
-    parser.add_argument("--token", default=os.environ.get("HCA_API_BEARER_TOKEN"), help="Bearer token.")
+    parser.add_argument(
+        "--token", default=os.environ.get("HCA_API_BEARER_TOKEN"), help="Bearer token."
+    )
     parser.add_argument("--timeout", type=float, default=60.0, help="HTTP timeout in seconds.")
 
 
 def add_render_options(parser: argparse.ArgumentParser, *, default_output: str = "json") -> None:
-    parser.add_argument("--output", choices=("json", "text"), default=default_output, help="Output format.")
-    parser.add_argument("--full", action="store_true", help="Disable default elision and show the full response.")
+    parser.add_argument(
+        "--output", choices=("json", "text"), default=default_output, help="Output format."
+    )
+    parser.add_argument(
+        "--full", action="store_true", help="Disable default elision and show the full response."
+    )
     parser.add_argument(
         "--include-headers",
         action="store_true",
@@ -110,7 +126,9 @@ def invoke_operation(
     json_body: Any | None = None,
 ) -> int:
     client = build_client(args)
-    response = client.request(method, path, path_params=path_params, query=query, json_body=json_body)
+    response = client.request(
+        method, path, path_params=path_params, query=query, json_body=json_body
+    )
     display = response_to_display(response, full=args.full, include_headers=args.include_headers)
     print_payload(display, args.output)
     return 0 if response.status < 400 else 1
@@ -155,7 +173,11 @@ def cmd_api_operations(args: argparse.Namespace) -> int:
                 "summary": operation.summary or "-",
             }
         )
-    print(render_table(rows, [("method", "METHOD"), ("path", "PATH"), ("tag", "TAG"), ("summary", "SUMMARY")]))
+    print(
+        render_table(
+            rows, [("method", "METHOD"), ("path", "PATH"), ("tag", "TAG"), ("summary", "SUMMARY")]
+        )
+    )
     return 0
 
 
@@ -232,7 +254,9 @@ def cmd_aux_swagger_init(args: argparse.Namespace) -> int:
 
 
 def cmd_aux_swagger_file(args: argparse.Namespace) -> int:
-    return invoke_operation(args, method="GET", path="/swagger/{file}", path_params={"file": args.file})
+    return invoke_operation(
+        args, method="GET", path="/swagger/{file}", path_params={"file": args.file}
+    )
 
 
 def cmd_aux_openapi(args: argparse.Namespace) -> int:
@@ -352,7 +376,9 @@ def cmd_repository_file_url(args: argparse.Namespace) -> int:
 
 
 def cmd_repository_sources(args: argparse.Namespace) -> int:
-    return invoke_operation(args, method="GET", path="/repository/sources", query={"catalog": args.catalog})
+    return invoke_operation(
+        args, method="GET", path="/repository/sources", query={"catalog": args.catalog}
+    )
 
 
 def _projects_facets_response(client: ApiClient, catalog: str) -> dict[str, Any]:
@@ -434,7 +460,9 @@ def _collect_datasets(
     return datasets, examined
 
 
-def _find_dataset(client: ApiClient, *, catalog: str, project_id: str, dataset_key: str) -> dict[str, Any]:
+def _find_dataset(
+    client: ApiClient, *, catalog: str, project_id: str, dataset_key: str
+) -> dict[str, Any]:
     detail = _project_detail_response(client, catalog, project_id)
     for dataset in derive_datasets(detail):
         if dataset["dataset_key"] == dataset_key:
@@ -449,7 +477,12 @@ def cmd_atlas_tissues(args: argparse.Namespace) -> int:
     if args.output == "json":
         print_payload(rows, "json")
     else:
-        print(render_table(rows, [("tissue", "TISSUE"), ("documents", "PROJECTS"), ("total_cells", "TOTAL CELLS")]))
+        print(
+            render_table(
+                rows,
+                [("tissue", "TISSUE"), ("documents", "PROJECTS"), ("total_cells", "TOTAL CELLS")],
+            )
+        )
     return 0
 
 
@@ -471,7 +504,12 @@ def cmd_atlas_modalities(args: argparse.Namespace) -> int:
     if args.output == "json":
         print_payload(rows, "json")
     else:
-        print(render_table(rows, [("modality", "MODALITY"), ("signal_count", "SIGNALS"), ("examples", "EXAMPLES")]))
+        print(
+            render_table(
+                rows,
+                [("modality", "MODALITY"), ("signal_count", "SIGNALS"), ("examples", "EXAMPLES")],
+            )
+        )
     return 0
 
 
@@ -555,7 +593,9 @@ def cmd_dataset_query(args: argparse.Namespace) -> int:
 
 def cmd_dataset_show(args: argparse.Namespace) -> int:
     client = build_client(args)
-    dataset = _find_dataset(client, catalog=args.catalog, project_id=args.project_id, dataset_key=args.dataset_key)
+    dataset = _find_dataset(
+        client, catalog=args.catalog, project_id=args.project_id, dataset_key=args.dataset_key
+    )
     if args.output == "json":
         print_payload(dataset, "json")
     else:
@@ -565,7 +605,9 @@ def cmd_dataset_show(args: argparse.Namespace) -> int:
 
 def cmd_dataset_files(args: argparse.Namespace) -> int:
     client = build_client(args)
-    dataset = _find_dataset(client, catalog=args.catalog, project_id=args.project_id, dataset_key=args.dataset_key)
+    dataset = _find_dataset(
+        client, catalog=args.catalog, project_id=args.project_id, dataset_key=args.dataset_key
+    )
     files = dataset.get("files", [])
     if not files:
         response = client.request(
@@ -609,7 +651,17 @@ def cmd_dataset_files(args: argparse.Namespace) -> int:
             }
             for file_entry in files[: args.limit]
         ]
-        print(render_table(rows, [("name", "NAME"), ("format", "FORMAT"), ("size", "SIZE"), ("description", "DESCRIPTION")]))
+        print(
+            render_table(
+                rows,
+                [
+                    ("name", "NAME"),
+                    ("format", "FORMAT"),
+                    ("size", "SIZE"),
+                    ("description", "DESCRIPTION"),
+                ],
+            )
+        )
     return 0
 
 
@@ -636,12 +688,21 @@ def cmd_dataset_formats(args: argparse.Namespace) -> int:
     if args.output == "json":
         print_payload(payload, "json")
     else:
-        print(render_table(rows, [("modality", "MODALITY"), ("format", "FORMAT"), ("datasets", "DATASETS"), ("total_size", "TOTAL SIZE")]))
+        print(
+            render_table(
+                rows,
+                [
+                    ("modality", "MODALITY"),
+                    ("format", "FORMAT"),
+                    ("datasets", "DATASETS"),
+                    ("total_size", "TOTAL SIZE"),
+                ],
+            )
+        )
     return 0
 
 
 def build_parser() -> argparse.ArgumentParser:
-    info = api_info()
     parser = argparse.ArgumentParser(
         prog="hca",
         description="Self-documenting command line client for the Human Cell Atlas Azul API.",
@@ -650,29 +711,45 @@ def build_parser() -> argparse.ArgumentParser:
     add_transport_options(parser)
     subparsers = parser.add_subparsers(dest="command")
 
-    explain = subparsers.add_parser("explain", help="Explain the HCA API mental model and common workflows.")
+    explain = subparsers.add_parser(
+        "explain", help="Explain the HCA API mental model and common workflows."
+    )
     explain.set_defaults(func=cmd_explain)
 
-    api = subparsers.add_parser("api", help="Inspect or call the raw API surface described by the bundled OpenAPI snapshot.")
+    api = subparsers.add_parser(
+        "api", help="Inspect or call the raw API surface described by the bundled OpenAPI snapshot."
+    )
     api_sub = api.add_subparsers(dest="api_command")
 
     operations_parser = api_sub.add_parser("operations", help="List all known API operations.")
     add_render_options(operations_parser, default_output="text")
-    operations_parser.add_argument("--tag", choices=("Auxiliary", "Index", "Manifests", "Repository"))
+    operations_parser.add_argument(
+        "--tag", choices=("Auxiliary", "Index", "Manifests", "Repository")
+    )
     operations_parser.set_defaults(func=cmd_api_operations)
 
-    describe_parser = api_sub.add_parser("describe", help="Describe one operation from the bundled OpenAPI metadata.")
+    describe_parser = api_sub.add_parser(
+        "describe", help="Describe one operation from the bundled OpenAPI metadata."
+    )
     add_render_options(describe_parser)
     describe_parser.add_argument("method", help="HTTP method, for example GET or PUT.")
-    describe_parser.add_argument("path", help="Exact OpenAPI path, for example /index/{entity_type}.")
+    describe_parser.add_argument(
+        "path", help="Exact OpenAPI path, for example /index/{entity_type}."
+    )
     describe_parser.set_defaults(func=cmd_api_describe)
 
-    call_parser = api_sub.add_parser("call", help="Call any operation by method and exact OpenAPI path.")
+    call_parser = api_sub.add_parser(
+        "call", help="Call any operation by method and exact OpenAPI path."
+    )
     add_render_options(call_parser)
     call_parser.add_argument("method", help="HTTP method.")
     call_parser.add_argument("path", help="Exact OpenAPI path.")
-    call_parser.add_argument("--path-param", action="append", default=[], metavar="NAME=VALUE", help="Path parameter.")
-    call_parser.add_argument("--query-param", action="append", default=[], metavar="NAME=VALUE", help="Query parameter.")
+    call_parser.add_argument(
+        "--path-param", action="append", default=[], metavar="NAME=VALUE", help="Path parameter."
+    )
+    call_parser.add_argument(
+        "--query-param", action="append", default=[], metavar="NAME=VALUE", help="Query parameter."
+    )
     call_parser.add_argument("--body-json", help="Raw JSON request body.")
     call_parser.add_argument("--body-file", help="Path to a JSON request body.")
     call_parser.set_defaults(func=cmd_api_call)
@@ -690,7 +767,9 @@ def build_parser() -> argparse.ArgumentParser:
         command_parser = aux_sub.add_parser(name, help=help_text)
         add_render_options(command_parser)
         command_parser.set_defaults(func=handler)
-    swagger_file = aux_sub.add_parser("swagger-file", help="Fetch a static Swagger asset by filename.")
+    swagger_file = aux_sub.add_parser(
+        "swagger-file", help="Fetch a static Swagger asset by filename."
+    )
     add_render_options(swagger_file)
     swagger_file.add_argument("file")
     swagger_file.set_defaults(func=cmd_aux_swagger_file)
@@ -735,7 +814,9 @@ def build_parser() -> argparse.ArgumentParser:
     index_query.add_argument("--search-after-uid")
     index_query.set_defaults(func=cmd_index_query)
 
-    index_summary = index_sub.add_parser("summary", help="Fetch global summary statistics, optionally filtered.")
+    index_summary = index_sub.add_parser(
+        "summary", help="Fetch global summary statistics, optionally filtered."
+    )
     add_render_options(index_summary)
     add_catalog_option(index_summary)
     add_filter_options(index_summary)
@@ -750,7 +831,9 @@ def build_parser() -> argparse.ArgumentParser:
     add_catalog_option(manifest_prepare)
     add_filter_options(manifest_prepare)
     manifest_prepare.add_argument("--format", choices=manifest_formats(), default="compact")
-    manifest_prepare.add_argument("--xhr", action="store_true", help="Use the XHR /fetch endpoint instead of redirects.")
+    manifest_prepare.add_argument(
+        "--xhr", action="store_true", help="Use the XHR /fetch endpoint instead of redirects."
+    )
     manifest_prepare.add_argument(
         "--body-mode",
         choices=("query", "body"),
@@ -759,20 +842,28 @@ def build_parser() -> argparse.ArgumentParser:
     )
     manifest_prepare.set_defaults(func=cmd_manifest_prepare)
 
-    manifest_status = manifest_sub.add_parser("status", help="Check the status of a manifest job token.")
+    manifest_status = manifest_sub.add_parser(
+        "status", help="Check the status of a manifest job token."
+    )
     add_render_options(manifest_status)
     manifest_status.add_argument("token_value", metavar="TOKEN")
-    manifest_status.add_argument("--xhr", action="store_true", help="Use the XHR /fetch endpoint instead of redirects.")
+    manifest_status.add_argument(
+        "--xhr", action="store_true", help="Use the XHR /fetch endpoint instead of redirects."
+    )
     manifest_status.set_defaults(func=cmd_manifest_status)
 
     repository = subparsers.add_parser("repository", help="Repository-backed file access.")
     repository_sub = repository.add_subparsers(dest="repository_command")
 
-    file_url = repository_sub.add_parser("file-url", help="Get the redirect or XHR metadata for a file download URL.")
+    file_url = repository_sub.add_parser(
+        "file-url", help="Get the redirect or XHR metadata for a file download URL."
+    )
     add_render_options(file_url)
     add_catalog_option(file_url)
     file_url.add_argument("file_uuid")
-    file_url.add_argument("--xhr", action="store_true", help="Use the XHR /fetch endpoint instead of redirects.")
+    file_url.add_argument(
+        "--xhr", action="store_true", help="Use the XHR /fetch endpoint instead of redirects."
+    )
     file_url.add_argument("--version")
     file_url.add_argument("--file-name")
     file_url.add_argument("--wait", type=int)
@@ -782,7 +873,9 @@ def build_parser() -> argparse.ArgumentParser:
     file_url.add_argument("--reserved-token")
     file_url.set_defaults(func=cmd_repository_file_url)
 
-    repository_sources = repository_sub.add_parser("sources", help="List repository sources for a catalog.")
+    repository_sources = repository_sub.add_parser(
+        "sources", help="List repository sources for a catalog."
+    )
     add_render_options(repository_sources)
     add_catalog_option(repository_sources)
     repository_sources.set_defaults(func=cmd_repository_sources)
@@ -802,33 +895,55 @@ def build_parser() -> argparse.ArgumentParser:
             atlas_parser.add_argument("--limit", type=int, default=18 if name == "tissues" else 20)
         atlas_parser.set_defaults(func=handler)
 
-    atlas_projects = atlas_sub.add_parser("projects", help="Browse projects through the atlas mental model.")
+    atlas_projects = atlas_sub.add_parser(
+        "projects", help="Browse projects through the atlas mental model."
+    )
     add_render_options(atlas_projects)
     add_catalog_option(atlas_projects)
     atlas_projects.add_argument("--tissue")
     atlas_projects.add_argument("--cell-type")
-    atlas_projects.add_argument("--modality", choices=tuple(sorted({"transcriptomics", "proteomics", "spatial", "epigenomics", "imaging"})))
+    atlas_projects.add_argument(
+        "--modality",
+        choices=tuple(
+            sorted({"transcriptomics", "proteomics", "spatial", "epigenomics", "imaging"})
+        ),
+    )
     atlas_projects.add_argument("--size", type=int, default=10)
     atlas_projects.add_argument("--sort", choices=sort_fields(), default="projectTitle")
     atlas_projects.add_argument("--order", choices=("asc", "desc"), default="asc")
     atlas_projects.set_defaults(func=cmd_atlas_projects)
 
-    dataset = subparsers.add_parser("dataset", help="Derived dataset-centric views built on top of project detail metadata.")
+    dataset = subparsers.add_parser(
+        "dataset", help="Derived dataset-centric views built on top of project detail metadata."
+    )
     dataset_sub = dataset.add_subparsers(dest="dataset_command")
 
-    dataset_query = dataset_sub.add_parser("query", help="Find derived datasets by tissue, cell type, and modality.")
+    dataset_query = dataset_sub.add_parser(
+        "query", help="Find derived datasets by tissue, cell type, and modality."
+    )
     add_render_options(dataset_query, default_output="text")
     add_catalog_option(dataset_query)
     dataset_query.add_argument("--tissue")
     dataset_query.add_argument("--cell-type")
-    dataset_query.add_argument("--modality", choices=tuple(sorted({"transcriptomics", "proteomics", "spatial", "epigenomics", "imaging"})))
-    dataset_query.add_argument("--project-limit", type=int, default=10, help="How many matching projects to inspect.")
-    dataset_query.add_argument("--limit", type=int, default=10, help="Maximum derived datasets to return.")
+    dataset_query.add_argument(
+        "--modality",
+        choices=tuple(
+            sorted({"transcriptomics", "proteomics", "spatial", "epigenomics", "imaging"})
+        ),
+    )
+    dataset_query.add_argument(
+        "--project-limit", type=int, default=10, help="How many matching projects to inspect."
+    )
+    dataset_query.add_argument(
+        "--limit", type=int, default=10, help="Maximum derived datasets to return."
+    )
     dataset_query.add_argument("--sort", choices=sort_fields(), default="projectTitle")
     dataset_query.add_argument("--order", choices=("asc", "desc"), default="asc")
     dataset_query.set_defaults(func=cmd_dataset_query)
 
-    dataset_show = dataset_sub.add_parser("show", help="Show detailed metadata for one derived dataset.")
+    dataset_show = dataset_sub.add_parser(
+        "show", help="Show detailed metadata for one derived dataset."
+    )
     add_render_options(dataset_show, default_output="text")
     add_catalog_option(dataset_show)
     dataset_show.add_argument("project_id")
@@ -843,12 +958,19 @@ def build_parser() -> argparse.ArgumentParser:
     dataset_files.add_argument("--limit", type=int, default=20)
     dataset_files.set_defaults(func=cmd_dataset_files)
 
-    dataset_formats = dataset_sub.add_parser("formats", help="Summarize which file formats correspond to observed modalities.")
+    dataset_formats = dataset_sub.add_parser(
+        "formats", help="Summarize which file formats correspond to observed modalities."
+    )
     add_render_options(dataset_formats, default_output="text")
     add_catalog_option(dataset_formats)
     dataset_formats.add_argument("--tissue")
     dataset_formats.add_argument("--cell-type")
-    dataset_formats.add_argument("--modality", choices=tuple(sorted({"transcriptomics", "proteomics", "spatial", "epigenomics", "imaging"})))
+    dataset_formats.add_argument(
+        "--modality",
+        choices=tuple(
+            sorted({"transcriptomics", "proteomics", "spatial", "epigenomics", "imaging"})
+        ),
+    )
     dataset_formats.add_argument("--project-limit", type=int, default=10)
     dataset_formats.add_argument("--sort", choices=sort_fields(), default="projectTitle")
     dataset_formats.add_argument("--order", choices=("asc", "desc"), default="asc")
@@ -876,18 +998,17 @@ def main(argv: list[str] | None = None) -> int:
     help_attr = command_help_attr.get(args.command)
     if help_attr and getattr(args, help_attr) is None:
         next(
-            action
-            for action in parser._actions
-            if isinstance(action, argparse._SubParsersAction)
+            action for action in parser._actions if isinstance(action, argparse._SubParsersAction)
         ).choices[args.command].print_help()
         return 0
     try:
-        return args.func(args)
+        func = cast(Callable[[argparse.Namespace], int], args.func)
+        return func(args)
     except CliError as exc:
-        print(f"error: {exc}", file=os.sys.stderr)
+        print(f"error: {exc}", file=sys.stderr)
         return 2
     except ValueError as exc:
-        print(f"error: {exc}", file=os.sys.stderr)
+        print(f"error: {exc}", file=sys.stderr)
         return 2
 
 

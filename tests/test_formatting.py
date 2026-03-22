@@ -5,11 +5,7 @@ def test_compacts_repository_sources() -> None:
     payload = {
         "catalogs": {
             "dcp57": {
-                "plugins": {
-                    "repository": {
-                        "sources": [f"source-{index}" for index in range(8)]
-                    }
-                }
+                "plugins": {"repository": {"sources": [f"source-{index}" for index in range(8)]}}
             }
         }
     }
@@ -20,7 +16,11 @@ def test_compacts_repository_sources() -> None:
 
 
 def test_compacts_term_facets() -> None:
-    payload = {"termFacets": {"organ": {"terms": [{"term": str(index), "count": index} for index in range(25)]}}}
+    payload = {
+        "termFacets": {
+            "organ": {"terms": [{"term": str(index), "count": index} for index in range(25)]}
+        }
+    }
     compacted = compact_payload(payload)
     terms = compacted["termFacets"]["organ"]["terms"]
     assert terms["_summary"].startswith("25 facet terms")

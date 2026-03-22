@@ -3,7 +3,6 @@ from __future__ import annotations
 import re
 from typing import Any
 
-
 MODALITY_PATTERNS: dict[str, tuple[str, ...]] = {
     "transcriptomics": (
         r"\brna\b",
@@ -74,9 +73,13 @@ def summarize_tissues(summary_response: dict[str, Any], *, limit: int = 18) -> l
     return rows[:limit]
 
 
-def summarize_cell_types(projects_response: dict[str, Any], *, limit: int = 20) -> list[dict[str, Any]]:
+def summarize_cell_types(
+    projects_response: dict[str, Any], *, limit: int = 20
+) -> list[dict[str, Any]]:
     rows = []
-    for term in projects_response.get("termFacets", {}).get("selectedCellType", {}).get("terms", []):
+    for term in (
+        projects_response.get("termFacets", {}).get("selectedCellType", {}).get("terms", [])
+    ):
         label = term.get("term")
         if label is None:
             continue
@@ -89,7 +92,9 @@ def _facet_terms(projects_response: dict[str, Any], facet_name: str) -> list[dic
     return list(projects_response.get("termFacets", {}).get(facet_name, {}).get("terms", []))
 
 
-def modality_matches(projects_response: dict[str, Any], category: str) -> dict[str, list[dict[str, Any]]]:
+def modality_matches(
+    projects_response: dict[str, Any], category: str
+) -> dict[str, list[dict[str, Any]]]:
     patterns = MODALITY_PATTERNS.get(category.lower())
     if not patterns:
         raise ValueError(f"Unsupported modality category: {category}")
@@ -109,14 +114,16 @@ def modality_matches(projects_response: dict[str, Any], category: str) -> dict[s
     return matches
 
 
-def summarize_modalities(projects_response: dict[str, Any], *, limit_terms: int = 6) -> list[dict[str, Any]]:
-    rows = []
+def summarize_modalities(
+    projects_response: dict[str, Any], *, limit_terms: int = 6
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, str | int]] = []
     for category in MODALITY_PATTERNS:
         matches = modality_matches(projects_response, category)
         total = 0
         top_terms = []
         for facet_name, items in matches.items():
-            total += sum(item["count"] for item in items)
+            total += sum(int(item["count"]) for item in items)
             for item in items[:limit_terms]:
                 top_terms.append(f"{facet_name}:{item['term']}")
         rows.append(
@@ -127,7 +134,11 @@ def summarize_modalities(projects_response: dict[str, Any], *, limit_terms: int 
                 "examples": ", ".join(top_terms[:limit_terms]) or "-",
             }
         )
-    rows.sort(key=lambda row: (-row["signal_count"], row["modality"]))
+
+    def sort_key(row: dict[str, str | int]) -> tuple[int, str]:
+        return (-int(row["signal_count"]), str(row["modality"]))
+
+    rows.sort(key=sort_key)
     return rows
 
 
@@ -152,5 +163,7 @@ def atlas_project_filters(
                 note = f"Mapped modality {modality!r} to {field_name} values discovered from live facet terms."
                 break
         if note is None:
-            note = f"No live facet terms matched modality {modality!r}; modality filter was skipped."
+            note = (
+                f"No live facet terms matched modality {modality!r}; modality filter was skipped."
+            )
     return filters, note

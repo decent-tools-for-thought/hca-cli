@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from hashlib import sha1
 import json
 import re
+from hashlib import sha1
 from typing import Any, Iterable
 
 from hca_cli.atlas import MODALITY_PATTERNS
 from hca_cli.formatting import format_bytes
-
 
 FORMAT_MODALITY_HINTS: dict[str, tuple[str, ...]] = {
     "h5": ("transcriptomics",),
@@ -62,7 +61,10 @@ def summarize_age(donor_organisms: list[dict[str, Any]]) -> tuple[list[str], lis
     ages: list[str] = []
     development_stages: list[str] = []
     for donor in donor_organisms:
-        ages.extend(_flatten_age(item) for item in donor.get("organismAge", []))
+        for item in donor.get("organismAge", []):
+            flattened = _flatten_age(item)
+            if flattened is not None:
+                ages.append(flattened)
         development_stages.extend(donor.get("developmentStage", []))
     return _unique_strings(ages), _unique_strings(development_stages)
 
@@ -101,10 +103,15 @@ def _total_size(files: list[dict[str, Any]]) -> int:
 
 
 def _matrix_cell_count(files: list[dict[str, Any]]) -> int | None:
-    values = [file_entry.get("matrixCellCount") for file_entry in files if file_entry.get("matrixCellCount") is not None]
+    values: list[int] = []
+    for file_entry in files:
+        raw_value = file_entry.get("matrixCellCount")
+        if raw_value is None:
+            continue
+        values.append(int(raw_value))
     if not values:
         return None
-    return int(sum(int(value) for value in values))
+    return sum(values)
 
 
 def _dataset_key(source: str, path: list[tuple[str, str]]) -> str:
@@ -179,7 +186,9 @@ def _leaf_dataset(
                 "format": file_entry.get("format"),
                 "size_bytes": int(file_entry.get("size") or 0),
                 "size": format_bytes(file_entry.get("size")),
-                "content_descriptions": _unique_strings(file_entry.get("contentDescription", []) or []),
+                "content_descriptions": _unique_strings(
+                    file_entry.get("contentDescription", []) or []
+                ),
                 "uuid": file_entry.get("uuid"),
                 "version": file_entry.get("version"),
                 "drs_uri": file_entry.get("drs_uri"),
@@ -189,13 +198,23 @@ def _leaf_dataset(
             for file_entry in files
         ],
     }
-    dataset["age_summary"] = "; ".join(dataset["ages"][:3]) if dataset["ages"] else "; ".join(dataset["development_stages"][:3])
+    dataset["age_summary"] = (
+        "; ".join(dataset["ages"][:3])
+        if dataset["ages"]
+        else "; ".join(dataset["development_stages"][:3])
+    )
     return dataset
 
 
-def _walk_grouped_file_tree(node: Any, path: list[tuple[str, str]] | None = None) -> list[tuple[list[tuple[str, str]], list[dict[str, Any]]]]:
+def _walk_grouped_file_tree(
+    node: Any, path: list[tuple[str, str]] | None = None
+) -> list[tuple[list[tuple[str, str]], list[dict[str, Any]]]]:
     path = path or []
-    if isinstance(node, list) and node and all(isinstance(item, dict) and "name" in item for item in node):
+    if (
+        isinstance(node, list)
+        and node
+        and all(isinstance(item, dict) and "name" in item for item in node)
+    ):
         return [(path, node)]
     results: list[tuple[list[tuple[str, str]], list[dict[str, Any]]]] = []
     if isinstance(node, dict):
@@ -203,7 +222,9 @@ def _walk_grouped_file_tree(node: Any, path: list[tuple[str, str]] | None = None
             if not isinstance(options, dict):
                 continue
             for option, child in options.items():
-                results.extend(_walk_grouped_file_tree(child, path + [(str(dimension), str(option))]))
+                results.extend(
+                    _walk_grouped_file_tree(child, path + [(str(dimension), str(option))])
+                )
     return results
 
 
@@ -211,7 +232,9 @@ def _fallback_dataset(project_detail: dict[str, Any]) -> dict[str, Any]:
     project = project_detail["projects"][0]
     donor_organisms = project_detail.get("donorOrganisms", [])
     ages, development_stages = summarize_age(donor_organisms)
-    formats = _unique_strings(summary.get("format") for summary in project_detail.get("fileTypeSummaries", []))
+    formats = _unique_strings(
+        summary.get("format") for summary in project_detail.get("fileTypeSummaries", [])
+    )
     descriptions: list[str] = []
     size_bytes = 0
     matrix_cell_count = 0
@@ -230,7 +253,12 @@ def _fallback_dataset(project_detail: dict[str, Any]) -> dict[str, Any]:
         "dataset_key": _dataset_key("project-summary", [("project", project["projectTitle"])]),
         "dataset_label": project["projectTitle"],
         "source": "project-summary",
-        "species": ", ".join(_unique_strings(value for donor in donor_organisms for value in donor.get("genusSpecies", []))) or None,
+        "species": ", ".join(
+            _unique_strings(
+                value for donor in donor_organisms for value in donor.get("genusSpecies", [])
+            )
+        )
+        or None,
         "organ": ", ".join(_unique_strings(organ_values)) or None,
         "development_stage": development_stages[0] if development_stages else None,
         "library_construction_approach": None,
@@ -240,7 +268,12 @@ def _fallback_dataset(project_detail: dict[str, Any]) -> dict[str, Any]:
         "primary_modality": modalities[0] if modalities else "unknown",
         "formats": formats,
         "content_descriptions": _unique_strings(descriptions),
-        "file_count": int(sum(int(summary.get("count") or 0) for summary in project_detail.get("fileTypeSummaries", []))),
+        "file_count": int(
+            sum(
+                int(summary.get("count") or 0)
+                for summary in project_detail.get("fileTypeSummaries", [])
+            )
+        ),
         "size_bytes": size_bytes,
         "size": format_bytes(size_bytes),
         "matrix_cell_count": matrix_cell_count or None,
@@ -254,7 +287,9 @@ def derive_datasets(project_detail: dict[str, Any]) -> list[dict[str, Any]]:
     for source_name in ("contributedAnalyses", "matrices"):
         grouped = project_detail.get("projects", [{}])[0].get(source_name, {})
         for path, files in _walk_grouped_file_tree(grouped):
-            datasets.append(_leaf_dataset(project_detail, source=source_name, path=path, files=files))
+            datasets.append(
+                _leaf_dataset(project_detail, source=source_name, path=path, files=files)
+            )
     if datasets:
         return datasets
     return [_fallback_dataset(project_detail)]

@@ -37,7 +37,9 @@ def compact_payload(payload: Any, *, full: bool = False, path: tuple[str, ...] =
         if _endswith(path, ("terms",)) and len(payload) > 10:
             return {
                 "_summary": f"{len(payload)} facet terms; showing the first 10 sorted terms. Use --full for the full facet.",
-                "items": [compact_payload(item, full=full, path=path + ("*",)) for item in payload[:10]],
+                "items": [
+                    compact_payload(item, full=full, path=path + ("*",)) for item in payload[:10]
+                ],
             }
         if _endswith(path, ("sources",)) and len(payload) > 5:
             return {
@@ -46,10 +48,16 @@ def compact_payload(payload: Any, *, full: bool = False, path: tuple[str, ...] =
             }
         if _endswith(path, ("organTypes",)) and len(payload) > 20:
             return _scalar_list_summary(payload, 20)
-        if path and path[-1] in {"contributors", "publications", "supplementaryLinks", "accessions"} and len(payload) > 6:
+        if (
+            path
+            and path[-1] in {"contributors", "publications", "supplementaryLinks", "accessions"}
+            and len(payload) > 6
+        ):
             return {
                 "_summary": f"{len(payload)} items; showing the first 6. Use --full for the complete list.",
-                "items": [compact_payload(item, full=full, path=path + ("*",)) for item in payload[:6]],
+                "items": [
+                    compact_payload(item, full=full, path=path + ("*",)) for item in payload[:6]
+                ],
             }
         return [compact_payload(item, full=full, path=path + ("*",)) for item in payload]
     return payload
@@ -93,10 +101,15 @@ def render_table(rows: list[dict[str, Any]], columns: list[tuple[str, str]]) -> 
         for row in rows:
             width = max(width, len(str(row.get(key, ""))))
         widths.append(width)
-    header = "  ".join(title.ljust(width) for (_, title), width in zip(columns, widths))
+    header = "  ".join(
+        title.ljust(width) for (_, title), width in zip(columns, widths, strict=True)
+    )
     divider = "  ".join("-" * width for width in widths)
     body = [
-        "  ".join(str(row.get(key, "")).ljust(width) for (key, _), width in zip(columns, widths))
+        "  ".join(
+            str(row.get(key, "")).ljust(width)
+            for (key, _), width in zip(columns, widths, strict=True)
+        )
         for row in rows
     ]
     return "\n".join([header, divider, *body])

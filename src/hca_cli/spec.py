@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from functools import lru_cache
 from importlib.resources import files
-import json
-from typing import Any
+from typing import Any, cast
 
 
 @dataclass(frozen=True)
@@ -50,7 +50,7 @@ class Operation:
 @lru_cache(maxsize=1)
 def _summary() -> dict[str, Any]:
     raw = files("hca_cli.data").joinpath("openapi_summary.json").read_text(encoding="utf-8")
-    return json.loads(raw)
+    return cast(dict[str, Any], json.loads(raw))
 
 
 @lru_cache(maxsize=1)

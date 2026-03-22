@@ -4,7 +4,6 @@ import json
 from pathlib import Path
 from urllib.request import urlopen
 
-
 OPENAPI_URL = "https://service.azul.data.humancellatlas.org/openapi.json"
 OUTPUT_PATH = Path("src/hca_cli/data/openapi_summary.json")
 
@@ -45,7 +44,9 @@ def main() -> None:
                     "description": operation["requestBody"].get("description", "").strip(),
                     "content": {
                         content_type: {"schema": media.get("schema", {})}
-                        for content_type, media in operation["requestBody"].get("content", {}).items()
+                        for content_type, media in operation["requestBody"]
+                        .get("content", {})
+                        .items()
                     },
                 }
             operations.append(
@@ -61,7 +62,9 @@ def main() -> None:
                 }
             )
 
-    filters_schema = spec["paths"]["/index/{entity_type}"]["get"]["parameters"][1]["content"]["application/json"]["schema"]
+    filters_schema = spec["paths"]["/index/{entity_type}"]["get"]["parameters"][1]["content"][
+        "application/json"
+    ]["schema"]
     filter_summary = {}
     for name, schema in filters_schema["properties"].items():
         operators = []
@@ -84,7 +87,9 @@ def main() -> None:
         "catalogs": ["dcp57", "dcp57-it", "dcp58", "dcp58-it", "lm10", "lm10-it"],
         "entity_types": ["bundles", "files", "projects", "samples"],
         "manifest_formats": ["compact", "terra.pfb", "curl", "verbatim.jsonl", "verbatim.pfb"],
-        "sort_fields": spec["paths"]["/index/{entity_type}"]["get"]["parameters"][4]["schema"]["enum"],
+        "sort_fields": spec["paths"]["/index/{entity_type}"]["get"]["parameters"][4]["schema"][
+            "enum"
+        ],
         "filter_fields": filter_summary,
     }
 

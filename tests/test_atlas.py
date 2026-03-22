@@ -1,4 +1,9 @@
-from hca_cli.atlas import atlas_project_filters, summarize_cell_types, summarize_modalities, summarize_tissues
+from hca_cli.atlas import (
+    atlas_project_filters,
+    summarize_cell_types,
+    summarize_modalities,
+    summarize_tissues,
+)
 
 
 def test_summarize_tissues_normalizes_case() -> None:
@@ -43,7 +48,9 @@ def test_modality_mapping_prefers_library_construction() -> None:
             "contentDescription": {"terms": []},
         }
     }
-    filters, note = atlas_project_filters(tissue="lung", cell_type="T cell", modality="proteomics", projects_response=payload)
+    filters, note = atlas_project_filters(
+        tissue="lung", cell_type="T cell", modality="proteomics", projects_response=payload
+    )
     assert filters["effectiveOrgan"] == {"is": ["lung"]}
     assert filters["selectedCellType"] == {"is": ["T cell"]}
     assert filters["libraryConstructionApproach"] == {"is": ["CITE-seq"]}

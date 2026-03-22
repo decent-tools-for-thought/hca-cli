@@ -1,19 +1,33 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import json
+from dataclasses import dataclass
 from typing import Any
 from urllib import error, parse, request
-
 
 USER_AGENT = "hca-cli/0.1"
 
 
 class NoRedirectHandler(request.HTTPRedirectHandler):
-    def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: D401
+    def redirect_request(  # noqa: D401
+        self,
+        req: request.Request,
+        fp: Any,
+        code: int,
+        msg: str,
+        headers: Any,
+        newurl: str,
+    ) -> None:
         return None
 
-    def http_error_301(self, req, fp, code, msg, headers):
+    def http_error_301(
+        self,
+        req: request.Request,
+        fp: Any,
+        code: int,
+        msg: str,
+        headers: Any,
+    ) -> Any:
         return fp
 
     http_error_302 = http_error_303 = http_error_307 = http_error_308 = http_error_301
@@ -92,8 +106,14 @@ class ApiClient:
             data = json.dumps(json_body).encode("utf-8")
             request_headers["Content-Type"] = "application/json"
 
-        http_request = request.Request(url, method=method.upper(), data=data, headers=request_headers)
-        opener = request.build_opener() if self.follow_redirects else request.build_opener(NoRedirectHandler)
+        http_request = request.Request(
+            url, method=method.upper(), data=data, headers=request_headers
+        )
+        opener = (
+            request.build_opener()
+            if self.follow_redirects
+            else request.build_opener(NoRedirectHandler)
+        )
         try:
             with opener.open(http_request, timeout=self.timeout) as response:
                 return ApiResponse(
