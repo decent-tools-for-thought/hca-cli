@@ -7,7 +7,7 @@
 Self-documenting command-line client for the Human Cell Atlas Azul API.
 
 > [!IMPORTANT]
-> This codebase is largely AI-generated. It is useful to me, I hope it might be useful to others, and issues and contributions are welcome.
+> This codebase is entirely AI-generated. It is useful to me, I hope it might be useful to others, and issues and contributions are welcome.
 
 ## Why This Exists
 
