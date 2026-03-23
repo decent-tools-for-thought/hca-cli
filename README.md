@@ -14,11 +14,11 @@ Self-documenting command-line client for exploring the Human Cell Atlas Azul API
 > This codebase is entirely AI-generated. It is useful to me, I hope it might be useful to others, and issues and contributions are welcome.
 
 ## Map
+$$\color{#0EA5E9}Tool \space \color{#14B8A6}Map$$
 - [Install](#install)
 - [Functionality](#functionality)
 - [Authentication And Transport](#authentication-and-transport)
 - [Quick Start](#quick-start)
-- [Development](#development)
 - [Credits](#credits)
 
 ## Install
@@ -28,14 +28,8 @@ uv tool install .
 hca --help
 ```
 
-For local development:
-
-```bash
-uv sync --group dev
-uv run hca --help
-```
-
 ## Functionality
+$$\color{#0EA5E9}Core \space \color{#14B8A6}Features$$
 
 ### Discovery And Raw API Inspection
 - `hca explain`: print the API mental model and common workflows.
@@ -93,6 +87,7 @@ uv run hca --help
 - Redirect-oriented commands support `--follow-redirects` when you want the client to follow redirects instead of showing redirect metadata.
 
 ## Authentication And Transport
+$$\color{#0EA5E9}Access \space \color{#14B8A6}Control$$
 
 By default the CLI targets `https://service.azul.data.humancellatlas.org`.
 
@@ -101,6 +96,7 @@ By default the CLI targets `https://service.azul.data.humancellatlas.org`.
 - Use `--timeout` to control HTTP timeouts.
 
 ## Quick Start
+$$\color{#0EA5E9}Quick \space \color{#14B8A6}Start$$
 
 ```bash
 hca explain
@@ -112,16 +108,8 @@ hca atlas tissues
 hca dataset query --tissue lung --modality transcriptomics --limit 5
 ```
 
-## Development
-
-```bash
-uv run ruff format --check .
-uv run ruff check .
-uv run mypy
-uv run pytest -m "unit or packaging_smoke"
-```
-
 ## Credits
+$$\color{#0EA5E9}Project \space \color{#14B8A6}Credits$$
 
 This client is built for the Human Cell Atlas data platform and is not affiliated with the Human Cell Atlas project.
 
