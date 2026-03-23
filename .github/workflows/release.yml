@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Release tag to publish. Defaults to v<project version>.
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -11,6 +17,8 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.release_meta.outputs.tag }}
 
     steps:
       - uses: actions/checkout@v4
@@ -21,10 +29,18 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Validate tag matches project version
+      - name: Resolve release tag
+        id: release_meta
         run: |
           version="$(python -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')"
-          test "${GITHUB_REF_NAME}" = "v${version}"
+          tag="${{ github.event.inputs.release_tag }}"
+          if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
+            tag="${GITHUB_REF_NAME}"
+          elif [ -z "$tag" ]; then
+            tag="v${version}"
+          fi
+          test "$tag" = "v${version}"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
 
       - name: Run test suite
         run: |
@@ -73,6 +89,8 @@ jobs:
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ needs.build.outputs.release_tag }}
+          target_commitish: ${{ github.sha }}
           files: |
             dist/SHA256SUMS.txt
             dist/*.tar.gz
