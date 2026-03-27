@@ -16,7 +16,7 @@ Self-documenting command-line client for exploring the Human Cell Atlas Azul API
 ## Map
 - [Install](#install)
 - [Functionality](#functionality)
-- [Authentication And Transport](#authentication-and-transport)
+- [Configuration](#configuration)
 - [Quick Start](#quick-start)
 - [Credits](#credits)
 
@@ -84,7 +84,7 @@ $$\color{#0EA5E9}Output \space \color{#14B8A6}Controls$$
 - Most fetch/query commands support `--include-headers` to include selected response headers.
 - Redirect-oriented commands support `--follow-redirects` when you want the client to follow redirects instead of showing redirect metadata.
 
-## Authentication And Transport
+## Configuration
 $$\color{#0EA5E9}Access \space \color{#14B8A6}Setup$$
 
 By default the CLI targets `https://service.azul.data.humancellatlas.org`.
