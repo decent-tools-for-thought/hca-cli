@@ -54,6 +54,7 @@ def test_modality_mapping_prefers_library_construction() -> None:
     assert filters["effectiveOrgan"] == {"is": ["lung"]}
     assert filters["selectedCellType"] == {"is": ["T cell"]}
     assert filters["libraryConstructionApproach"] == {"is": ["CITE-seq"]}
+    assert note is not None
     assert "Mapped modality" in note
     modality_rows = summarize_modalities(payload)
     assert modality_rows[0]["signal_count"] >= 7

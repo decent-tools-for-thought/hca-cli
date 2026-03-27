@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Self-documenting command line client for the Human Cell Atlas API"
 readme = "README.md"
 license = "0BSD"
-requires-python = ">=3.11"
+requires-python = ">=3.13"
 
 [dependency-groups]
 dev = [
@@ -42,7 +42,7 @@ markers = [
 [tool.ruff]
 line-length = 100
 src = ["src", "tests"]
-target-version = "py311"
+target-version = "py313"
 
 [tool.ruff.format]
 quote-style = "double"
@@ -58,7 +58,7 @@ select = [
 ignore = ["E501"]
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.13"
 files = ["src/hca_cli"]
 strict = true
 warn_unused_ignores = true
